@@ -9,7 +9,7 @@ export type CheckerProps = {
   x:number,
   y:number,
   arr:any[],
-  setArr:React.Dispatch<React.SetStateAction<never[]>>,
+  setArr:React.Dispatch<React.SetStateAction<JSX.Element[]>>,
   isKing:boolean,
 };
 

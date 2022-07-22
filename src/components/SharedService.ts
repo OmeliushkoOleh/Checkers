@@ -1,13 +1,13 @@
 import { ICellComponent } from "./Cell/Cell";
 import { CheckerProps, Player } from "./Checker/Checker";
 
-interface Iobj  {
+export interface Iobj  {
     coordinates:{
         x:number|null,
         y:number|null,
     },
     cellsArr:ICellComponent[],
-    setArr:React.Dispatch<React.SetStateAction<never[]>>,
+    setArr:React.Dispatch<React.SetStateAction<JSX.Element[]>>,
     setTurnToMove:React.Dispatch<React.SetStateAction<Player>>,
     turnToMove:Player,
     checkerWhoHit:CheckerProps|null,

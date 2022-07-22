@@ -9,8 +9,15 @@ export type CellProps = {
   color:cellColor,
   checker: any,
   canDrop:boolean,
-  setArr:React.Dispatch<React.SetStateAction<never[]>>,
+  setArr:React.Dispatch<React.SetStateAction<JSX.Element[]>>,
 };
+export interface IGemeDataInterface {
+  coordinates:{x:number|null,y:number|null},
+  checkers:Omit<CheckerProps,"setArr"|"arr">[],
+  cells:Omit<CellProps,"setArr"|"checker">[],
+  turnToMove:Player,
+  checkerWhoHit:Omit<CheckerProps,"arr"|"setArr">|null,
+}
 export  const size = 100
 
 export interface ICellComponent  {
@@ -364,15 +371,7 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
         sharedService.setTurnToMove(inverted)
       }
     }
-
-
-      // sharedService.cellsArr.forEach((e)=>{
-      //   if(whoCanHit(e.props.x,e.props.y) != null){
-      //     console.log(whoCanHit(e.props.x,e.props.y));
-      //   }
-      // })
-      
-    
+    saveData()
   }
 
   function handleDragOver(e:any){
@@ -382,6 +381,42 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
     }
   }
 
+  const saveData= ()=>{
+    let cells:IGemeDataInterface["cells"] = sharedService.cellsArr.map((e)=>{
+      return {
+        x:e.props.x,
+        y:e.props.y,
+        color:e.props.color,
+        canDrop:e.props.canDrop,
+      }
+    })
+    let checkers:IGemeDataInterface["checkers"] = []
+    sharedService.cellsArr.forEach((e)=>{
+      if(e.props.checker){
+        checkers.push({
+          x: e.props.checker.props.x,
+          y: e.props.checker.props.y,
+          isKing: e.props.checker.props.isKing,
+          player: e.props.checker.props.player,
+        })
+      }
+
+    })
+    let dataGame:IGemeDataInterface = {
+      coordinates: {
+        x: sharedService.coordinates.x,
+        y: sharedService.coordinates.y
+      },
+      checkers: checkers,
+      cells: cells,
+      turnToMove: sharedService.turnToMove,
+      checkerWhoHit: sharedService.checkerWhoHit
+    }
+
+    
+    let stringifiedProps = JSON.stringify(dataGame)
+    localStorage.setItem("gameData",stringifiedProps)
+  }
   function handleDragLeave(e:any){
     if(e.target.classList.contains("canDrop")){
       e.target.classList.remove("over")
