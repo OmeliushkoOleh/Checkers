@@ -1,0 +1,12 @@
+.fild {
+    width: 800px;
+    height: 800px;
+    background-color: green;
+    color: red;
+}
+
+.turnToMove {
+    position: fixed;
+    top: 150px;
+    left: 1200px;
+}
