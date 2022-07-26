@@ -1,5 +1,5 @@
 import * as React from "react";
-import Cell, { arrOfFildsWherCanHit, canMove,  cellColor, wherCanDrop, whoCanHit } from "../Cell/Cell";
+import Cell, { arrOfFildsWherCanHit, arrOfSteps, canMove,  cellColor, wherCanDrop, whoCanHit } from "../Cell/Cell";
 import {size}  from '../Cell/Cell'
 import {  sharedService } from "../SharedService";
 // import { cellsArray2 } from "../Fild/Fild";
@@ -26,8 +26,14 @@ if(props.player === 1){
 
 )
 const dragstart = (e:any)=>{
+
+
+  if(parseInt(localStorage.getItem("step")!) !== sharedService.stepNow){  
+    return false
+  }
   
-  let newArr:any =  [...sharedService.cellsArr]
+  let newArr =  [...sharedService.cellsArr]
+  
   if(sharedService.turnToMove  !==  props.player){
     return false
   }
@@ -43,6 +49,8 @@ const dragstart = (e:any)=>{
     }
   }
   let checker = JSON.stringify(props)
+  console.log(checker);
+  
   e.dataTransfer!.setData("text/plain",checker);
   sharedService.coordinates.x = props.x
   sharedService.coordinates.y = props.y
@@ -52,7 +60,7 @@ const dragstart = (e:any)=>{
     canMovedCoords = canMove(props.x,props.y)
   }
 
-  newArr.forEach((Element:any,index:any) => {
+  newArr.forEach((Element,index:number) => {
     let xEven = Element.props.x % 2 == 0
     let yEven = Element.props.y % 2 == 0
     const condition = (xEven && yEven) || (!xEven && !yEven)
@@ -65,13 +73,16 @@ const dragstart = (e:any)=>{
     })
     
     if(canDrop ){
-      newArr[index] = <Cell setArr={sharedService.setArr}  canDrop={!!canDrop} x={x} y={y} color={color} key={Math.random()*1000} checker={checker} ></Cell>
-
+      newArr[index] = <Cell  setStep={Element.props.setStep} setArr={sharedService.setArr}  canDrop={!!canDrop} x={x} y={y} color={color} key={Math.random()*1000} checker={checker} ></Cell>
     } 
   });
   sharedService.cellsArr = newArr
-  props.setArr(newArr)
+  props.setArr(newArr  as JSX.Element[])
 }
+
+
+
+
 
 
 function handleDragEnd() {

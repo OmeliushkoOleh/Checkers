@@ -2,6 +2,10 @@ import * as React from "react";
 import styles from './Cell.module.css';
 import Checker, { CheckerProps, Player } from '../Checker/Checker'
 import { sharedService } from "../SharedService";
+import $ from 'jquery';
+
+
+
 export type cellColor = "white"|"black";
 export type CellProps = {
   x:number,
@@ -10,7 +14,11 @@ export type CellProps = {
   checker: any,
   canDrop:boolean,
   setArr:React.Dispatch<React.SetStateAction<JSX.Element[]>>,
+  setStep:React.Dispatch<React.SetStateAction<number>>,
 };
+
+export let arrOfSteps:IGemeDataInterface[] = JSON.parse(localStorage.getItem("gameData")!) || []
+
 export interface IGemeDataInterface {
   coordinates:{x:number|null,y:number|null},
   checkers:Omit<CheckerProps,"setArr"|"arr">[],
@@ -18,6 +26,7 @@ export interface IGemeDataInterface {
   turnToMove:Player,
   checkerWhoHit:Omit<CheckerProps,"arr"|"setArr">|null,
 }
+let sad = $
 export  const size = 100
 
 export interface ICellComponent  {
@@ -25,18 +34,19 @@ export interface ICellComponent  {
 }
  type Filds = (x:number,y:number)=>{x:number,y:number}[]
 
- export const arrOfFildsWherCanMove = ()=>{
-  let arrOf:any[] = []
-  let filtered = sharedService.cellsArr.filter(e=>{
-    return e.props?.checker?.props.player === sharedService.turnToMove
-  })
-  filtered.forEach(e=>{
-    arrOf.push(canMove(e.props.x,e.props.y)) 
-  })
-  return arrOf
- }
+export const arrOfFildsWherCanMove = ()=>{
+let arrOf:any[] = []
+let filtered = sharedService.cellsArr.filter(e=>{
+  return e.props?.checker?.props.player === sharedService.turnToMove
+})
+filtered.forEach(e=>{
+  arrOf.push(canMove(e.props.x,e.props.y)) 
+})
+return arrOf
+}
 
 export const canMove:Filds = (x,y)=>{
+  
   let currentCell = sharedService.cellsArr.find((e)=>{
     return e.props.x === x && e.props.y === y
   })
@@ -52,22 +62,21 @@ export const canMove:Filds = (x,y)=>{
     findToMove(x,y,-1,-1)
   }
   
-  function findToMove(x:number,y:number,X:number,Y:number){
-    
-    let neigberX:number 
-    let neigberY:number 
-    neigberX = x+X
-    neigberY = y+Y
-    
-
-    let findedCell = sharedService.cellsArr.find((e)=>{
-      return e.props.x ===  neigberX && e.props.y ===  neigberY 
-    })      
-    if(findedCell && findedCell?.props?.checker == null ){
-      res.push({x:neigberX,y:neigberY})
-    }
+function findToMove(x:number,y:number,X:number,Y:number){
+  
+  let neigberX:number 
+  let neigberY:number 
+  neigberX = x+X
+  neigberY = y+Y
+  
+  let findedCell = sharedService.cellsArr.find((e)=>{
+    return e.props.x ===  neigberX && e.props.y ===  neigberY 
+  })      
+  if(findedCell && findedCell?.props?.checker == null ){
+    res.push({x:neigberX,y:neigberY})
   }
-  return res
+}
+return res
 }
 
 export const canMoveKing:Filds = (x,y)=>{
@@ -94,6 +103,7 @@ export const canMoveKing:Filds = (x,y)=>{
       if(findedChecker == null){
         res.push({x:neigberX,y:neigberY})
       }
+
     }while(findedCell && findedChecker == null)
 
   }  
@@ -130,59 +140,13 @@ export const wherCanKingDrop:Filds = (x,y)=>{
       if(findedCell && enemyCount==1 && findedCell.props.checker == null){
         res.push({x:neigberX,y:neigberY})
       }
+      
     } while(findedCell && findedChecker == null)
   }
-// export const wherCanKingDrop:Filds = (x,y)=>{
-//   let res:{x:number,y:number}[] = [] 
-  
-//   fildToHit(x,y,1,1)
-//   fildToHit(x,y,-1,1)
-//   fildToHit(x,y,-1,-1)
-//   fildToHit(x,y,1,-1)
-
-//   function fildToHit (x:number,y:number,X:number,Y:number){
-//     let neigberX:number = x 
-//     let neigberY:number = y
-//     let findedCell:any 
-//     let findedChecker 
-    
-//     do{
-//       neigberX = neigberX + X
-//       neigberY = neigberY + Y
-//       findedCell = sharedService.cellsArr.find((e)=>{
-//         return e.props.x ===  neigberX && e.props.y ===  neigberY 
-//       })
-//         let neigberX1:any = neigberX
-//         let neigberY1:any = neigberY
-//       if(findedCell && findedCell.props.checker && findedCell.props.checker.props.player === sharedService.turnToMove){
-//         return
-//       }
-//       if(findedCell && findedCell.props.checker && findedCell.props.checker.props.player !== sharedService.turnToMove){
-//         do{
-//           debugger
-//           neigberX1 = neigberX1 + X
-//           neigberY1 = neigberY1 + Y
-//           findedCell = sharedService.cellsArr.find((e)=>{
-//             return e.props.x ===  neigberX1 && e.props.y ===  neigberY1 
-//           })
-//           findedChecker = findedCell? findedCell.props.checker: null  
-//           if(findedChecker == null){
-//             res.push({x:findedCell?.props?.x,y:findedCell?.props?.y})
-//           }
-//         } while(findedCell && findedChecker == null)
-//       }
-//     } while(findedCell && findedChecker == null)
-//   }
-
-
-
-
-
   return res
 }
 
 export const wherCanDrop:Filds = (x,y)=> {
-  debugger
   let currentCell = sharedService.cellsArr.find((e)=>{
     return e.props.x === x && e.props.y === y
   })
@@ -196,7 +160,6 @@ export const wherCanDrop:Filds = (x,y)=> {
   fildToHit(x,y,1,-1)
 
   function fildToHit (x:number,y:number,X:number,Y:number){
-    debugger
     let neigberX:number 
     let neigberY:number 
     neigberX = x+X
@@ -267,6 +230,7 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
       let currentX = data.x - delX
       let currentY = data.y - delY
       while(props.x !== currentX + delX  && props.y !== currentY + delX ){
+        
         currentX = currentX + delX
         currentY = currentY + delY
         let itemToDel = sharedService.cellsArr.find(e=>{
@@ -297,7 +261,9 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
           checker:<Checker {...{...data,x:props.x,y:props.y,setArr:props.setArr,isKing:isKing}}></Checker>,
           key:Math.random()*1000,
           canDrop:false,
-        }        
+        }
+        
+                
         e=<Cell {...newProps} ></Cell>       
       }
       if(e.props.canDrop === true){ //создаёт шашку на месте куда походил или побил
@@ -317,44 +283,6 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
       let newProps = {...data,x:props.x,y:props.y}
       sharedService.checkerWhoHit = newProps
     }
-    // sharedService.cellsArr.forEach((Element:any,index) => {
-      
-    //   const x = Element.props.x
-    //   const y = Element.props.y
-    //   const color = Element.props.color
-    //   let checker = Element.props.checker
-    //   // if(Element.props === props){
-        
-    //   //   let isKing:boolean = data.isKing
-    //   //   if(data.player === 1 && props.y === 8){
-    //   //     isKing = true
-    //   //   }  else if (data.player === 2 && props.y === 1){
-    //   //     isKing = true
-    //   //   }
-
-          
-    //   //   checker = <Checker isKing={isKing} player={data.player} x={Element.props.x} y={Element.props.y} arr={data.arr} setArr={sharedService.setArr} ></Checker>
-    //   //   let arrToDel = []
-    //   //   
-
-    //   // if(data.x == x && data.y == y ){
-    //   //   checker = null
-    //   // }
-    //   newArr.push(<Cell  setArr={sharedService.setArr} canDrop={false} x={x} y={y} color={color} key={index} checker={checker} ></Cell>)
-    // });
-
-    // if(needForRemove != null){
-    //   newArr.forEach((e:any,index:any)=>{
-    //     let deletedChecker = !(e.props.x == needForRemove!.x && e.props.y == needForRemove!.y)
-    //     if(!deletedChecker){
-    //       let copiedProps = {...e.props}
-    //       copiedProps.checker = null          
-    //       copiedProps.key = copiedProps.key*33
-    //       newArr[index] = <Cell {...copiedProps} ></Cell>
-    //     }
-    //   })
-    // }
-
         
     props.setArr(newArr)
     sharedService.cellsArr = newArr
@@ -371,7 +299,11 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
         sharedService.setTurnToMove(inverted)
       }
     }
+    
     saveData()
+    console.log("cal");
+    
+    props.setStep((prev)=>prev + 1)
   }
 
   function handleDragOver(e:any){
@@ -382,14 +314,17 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
   }
 
   const saveData= ()=>{
+
     let cells:IGemeDataInterface["cells"] = sharedService.cellsArr.map((e)=>{
       return {
         x:e.props.x,
         y:e.props.y,
         color:e.props.color,
         canDrop:e.props.canDrop,
+        setStep:e.props.setStep,
       }
     })
+
     let checkers:IGemeDataInterface["checkers"] = []
     sharedService.cellsArr.forEach((e)=>{
       if(e.props.checker){
@@ -400,8 +335,8 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
           player: e.props.checker.props.player,
         })
       }
-
     })
+    
     let dataGame:IGemeDataInterface = {
       coordinates: {
         x: sharedService.coordinates.x,
@@ -413,10 +348,17 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
       checkerWhoHit: sharedService.checkerWhoHit
     }
 
-    
-    let stringifiedProps = JSON.stringify(dataGame)
+    arrOfSteps.push(dataGame)
+    let stringifiedProps = JSON.stringify(arrOfSteps)
+
+
+
     localStorage.setItem("gameData",stringifiedProps)
+    let newStep = parseInt(localStorage.getItem("step")!) + 1
+    localStorage.setItem("step",newStep.toString())
+
   }
+
   function handleDragLeave(e:any){
     if(e.target.classList.contains("canDrop")){
       e.target.classList.remove("over")

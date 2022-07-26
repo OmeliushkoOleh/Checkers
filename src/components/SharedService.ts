@@ -11,6 +11,7 @@ export interface Iobj  {
     setTurnToMove:React.Dispatch<React.SetStateAction<Player>>,
     turnToMove:Player,
     checkerWhoHit:CheckerProps|null,
+    stepNow:number,
 }
 // class sharedService{
 //     cellsArray1 = []
@@ -29,5 +30,6 @@ export const sharedService:Iobj = {
     setArr:(arr)=>{},
     setTurnToMove:()=>{},
     turnToMove:1,
-    checkerWhoHit:null
+    checkerWhoHit:null,
+    stepNow:0,
 }

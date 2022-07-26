@@ -10,6 +10,9 @@
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "create-react-component-folder": "^0.3.7",
+    "jquery": "^3.6.0",
+    "js-string-compression": "^1.0.1",
+    "lzutf8": "^0.6.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -41,6 +44,7 @@
     ]
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.14",
     "@types/node": "^18.0.5",
     "css-loader": "^6.7.1"
   }
