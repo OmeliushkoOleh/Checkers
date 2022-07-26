@@ -46,7 +46,6 @@ return arrOf
 }
 
 export const canMove:Filds = (x,y)=>{
-  
   let currentCell = sharedService.cellsArr.find((e)=>{
     return e.props.x === x && e.props.y === y
   })
@@ -81,78 +80,34 @@ return res
 
 export const canMoveKing:Filds = (x,y)=>{
   let res:{x:number,y:number}[] = [] 
-
-  findToMove(x,y,1,1)
-  findToMove(x,y,-1,1)
-  findToMove(x,y,1,-1)
-  findToMove(x,y,-1,-1)
-
-  function findToMove(x:number,y:number,X:number,Y:number){
-    let neigberX:number = x 
-    let neigberY:number = y
-    let findedCell:any 
-    let findedChecker  
-
-    do{
-      neigberX = neigberX + X
-      neigberY = neigberY + Y
-      findedCell = sharedService.cellsArr.find((e)=>{
-        return e.props.x ===  neigberX && e.props.y ===  neigberY 
-      })
-      findedChecker = findedCell? findedCell.props.checker: null  
-      if(findedChecker == null){
-        res.push({x:neigberX,y:neigberY})
-      }
-
-    }while(findedCell && findedChecker == null)
-
-  }  
-  return res
-}
-
-export const wherCanKingDrop:Filds = (x,y)=>{
-  let res:{x:number,y:number}[] = [] 
   
-  fildToHit(x,y,1,1)
-  fildToHit(x,y,-1,1)
-  fildToHit(x,y,-1,-1)
-  fildToHit(x,y,1,-1)
-
-  function fildToHit (x:number,y:number,X:number,Y:number){
-    let neigberX:number = x 
-    let neigberY:number = y
-    let findedCell:any 
-    let findedChecker 
-    let enemyCount = 0
-
-    do{
-      neigberX = neigberX + X
-      neigberY = neigberY + Y
-      findedCell = sharedService.cellsArr.find((e)=>{
-        return e.props.x ===  neigberX && e.props.y ===  neigberY 
-      })
-      if(findedCell && findedCell.props.checker && findedCell.props.checker.props.player === sharedService.turnToMove){
-        return
-      }
-      if(findedCell && findedCell.props.checker && findedCell.props.checker.props.player !== sharedService.turnToMove){
-        enemyCount++
-      }
-      if(findedCell && enemyCount==1 && findedCell.props.checker == null){
-        res.push({x:neigberX,y:neigberY})
-      }
-      
-    } while(findedCell && findedChecker == null)
+    findToMove(x,y,1,1)
+    findToMove(x,y,-1,1)
+    findToMove(x,y,1,-1)
+    findToMove(x,y,-1,-1)
+ 
+  
+function findToMove(x:number,y:number,X:number,Y:number){
+  
+  let neigberX:number 
+  let neigberY:number 
+  neigberX = x+X
+  neigberY = y+Y
+  
+  let findedCell = sharedService.cellsArr.find((e)=>{
+    return e.props.x ===  neigberX && e.props.y ===  neigberY 
+  })      
+  if(findedCell && findedCell?.props?.checker == null ){
+    res.push({x:neigberX,y:neigberY})
   }
-  return res
 }
+return res
+}
+
+
 
 export const wherCanDrop:Filds = (x,y)=> {
-  let currentCell = sharedService.cellsArr.find((e)=>{
-    return e.props.x === x && e.props.y === y
-  })
-  if(currentCell && currentCell.props.checker && currentCell.props.checker.props?.isKing === true){
-    return wherCanKingDrop(x,y) 
-  } 
+  
   let res:{x:number,y:number}[] = [] 
   fildToHit(x,y,1,1)
   fildToHit(x,y,-1,1)
@@ -301,7 +256,6 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
     }
     
     saveData()
-    console.log("cal");
     
     props.setStep((prev)=>prev + 1)
   }

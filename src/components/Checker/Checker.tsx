@@ -49,7 +49,6 @@ const dragstart = (e:any)=>{
     }
   }
   let checker = JSON.stringify(props)
-  console.log(checker);
   
   e.dataTransfer!.setData("text/plain",checker);
   sharedService.coordinates.x = props.x
