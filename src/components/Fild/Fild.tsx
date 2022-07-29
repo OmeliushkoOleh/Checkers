@@ -1,20 +1,79 @@
 import * as React from "react";
 import Cell from "../Cell";
-import { arrOfFildsWherCanHit,  arrOfFildsWherCanMove,  arrOfSteps,  cellColor, ICellComponent, IGemeDataInterface } from "../Cell/Cell";
+import { arrOfAllSteps, arrOfFildsWherCanHit,  arrOfFildsWherCanMove,  arrOfSteps,  cellColor, ICellComponent, IGemeDataInterface } from "../Cell/Cell";
 import styles from './Fild.module.css'
 import Checker, { CheckerProps, Player } from '../Checker/Checker'
 import {  Iobj, sharedService } from "../SharedService";
-
+import { recursion, Step } from "../BotService";
 type FildProps = {
   //
 };
 
 //dfdg
+export const createBranch = ()=>{
 
+  const goToPAr:(step:Step)=>Step|null = (step)=>{
+    
+    let currentStep:Step = step
+    let arrOfSteps:Step[] = []
+
+    arrOfSteps.push(currentStep)
+    do{
+        currentStep = currentStep!.zparentStep as Step
+        arrOfSteps.push(currentStep)
+    }
+    while(currentStep != null)
+    
+    let currentIndex = arrOfSteps.length - 2
+    if(currentIndex < 3 ) {
+      return null
+    }
+    do{
+      currentStep = arrOfSteps[currentIndex]
+      currentIndex = currentIndex - 1
+    }
+    while(currentStep.expectation != 100 && currentStep.moveBy !== "bot")
+    return arrOfSteps[currentIndex - 1]
+  }
+  
+  
+  let arrOfSatisfy:Step[] = [] 
+  console.log(arrOfAllSteps);
+  let withoutChildStep = arrOfAllSteps.filter(e=>e.childStep)
+  console.log(withoutChildStep);
+  
+  console.log(withoutChildStep.filter(e=>Math.abs(e.x - e.childStep!.x) === 1 && Math.abs(e.y - e.childStep!.y) === 1));
+
+  console.log(arrOfAllSteps[0].x,arrOfAllSteps[0].y);
+  console.log(arrOfAllSteps[0].childStep!.x,arrOfAllSteps[0].childStep!.y);
+
+  if(arrOfAllSteps[0].x - arrOfAllSteps[0].childStep!.x < 1 && arrOfAllSteps[0].y - arrOfAllSteps[0].childStep!.y < 1 ){
+
+  }
+  arrOfAllSteps.forEach((e)=>{
+    let stepsWithCoord = goToPAr(e)
+    if(stepsWithCoord && stepsWithCoord.moveBy === "bot"){
+      arrOfSatisfy.push(stepsWithCoord)
+    }
+  })
+  arrOfSatisfy.sort((a,b)=>{
+    return b.expectation  - a.expectation
+  })
+  let step1:Step|null = null
+  console.log(arrOfSatisfy);
+  
+  if(arrOfSatisfy.length > 0 ){
+    step1 = arrOfSatisfy[1]
+  }
+  console.log(arrOfSatisfy);
+  
+  
+  return step1
+}
 
 const Fild: React.FC<any> = () => {
 
-  const [turnToMove, setTurnToMove] = React.useState<Player> (1)
+  const [turnToMove, setTurnToMove] = React.useState<Player> (2)
   sharedService.setTurnToMove = setTurnToMove
 
   const [step, setStep] = React.useState(0)
@@ -24,6 +83,7 @@ const Fild: React.FC<any> = () => {
 
 
   const startNewGame = ()=>{
+    
     let cellsArray:any = []
     let counter = 0
     for(let x = 1;x <=8; x++){
@@ -36,11 +96,13 @@ const Fild: React.FC<any> = () => {
         const condition = (xEven && yEven) || (!xEven && !yEven)
         if(condition){
           color = "white";
-          if(y<4){
-            checker = <Checker isKing={false} arr={arr} setArr={setArr} x={x} y={y} player={1}></Checker>
+          if(x == 5 && y ==5){
+            checker = <Checker isKing={true} arr={arr} setArr={setArr} x={x} y={y} player={1}></Checker>
+            sharedService.enemy = {...checker.props}
           } 
-          if(y>5){
-            checker = <Checker isKing={false} arr={arr} setArr={setArr} x={x} y={y} player={2}></Checker>
+          if(x == 2 && y == 2 ){
+            checker = <Checker isKing={true} arr={arr} setArr={setArr} x={x} y={y} player={2}></Checker>
+            sharedService.player = {...checker.props}
           }
         } else{
           color = "black"
@@ -51,6 +113,7 @@ const Fild: React.FC<any> = () => {
       }
     } 
     setArr(cellsArray)
+
     sharedService.cellsArr = cellsArray
 
     if(!localStorage.getItem("gameData")){
@@ -90,66 +153,14 @@ const Fild: React.FC<any> = () => {
       }
       arrOfSteps.push(dataGame)
       let stringifiedProps = JSON.stringify(arrOfSteps)
-      localStorage.setItem("gameData",stringifiedProps)
+      
     }
   }
 
-  const continGame = (gameStep:IGemeDataInterface)=>{
-    
-    setStep(parseInt(JSON.parse(localStorage.getItem("step")!)))
-    let cellsArray:JSX.Element[] = []
-    gameStep.cells.forEach(e=>{
-      let checkersData = gameStep.checkers.find(el=>el.x===e.x && el.y===e.y) 
-      let checker
-      if(checkersData){
-        checker = <Checker key={Math.random()*222} player={checkersData.player} x={checkersData.x} y={checkersData.y} arr={arr} setArr={setArr} isKing={checkersData.isKing}></Checker>
-      }
-      let cell = <Cell  setStep={setStep} key={Math.random()*222} x={e.x} y={e.y} color={e.color} checker={checker} canDrop={e.canDrop} setArr={setArr}></Cell>
-      cellsArray.push(cell)
-    })
-    let checkerWhoHit:CheckerProps|null = {
-      x:gameStep.checkerWhoHit!?.x,
-      y: gameStep.checkerWhoHit!?.y,
-      player:gameStep.checkerWhoHit!?.player ,
-      arr: arr,
-      isKing: gameStep.checkerWhoHit!?.isKing,
-      setArr:setArr 
-    }
-    let sharedService1:Iobj = {
-      coordinates: {
-        x: gameStep.coordinates.x,
-        y: gameStep.coordinates.y
-      },
-      turnToMove: gameStep.turnToMove,
-      checkerWhoHit: checkerWhoHit,
-      setArr:setArr,
-      setTurnToMove:setTurnToMove,
-      cellsArr:cellsArray,
-      stepNow:step,
 
-    }
-    sharedService.cellsArr = sharedService1.cellsArr
-    sharedService.checkerWhoHit = sharedService1.checkerWhoHit
-    sharedService.coordinates = sharedService1.coordinates
-    sharedService.setArr = setArr
-    sharedService.setTurnToMove = setTurnToMove
-    sharedService.turnToMove = sharedService1.turnToMove
-    setArr(cellsArray)
-    setTurnToMove(gameStep.turnToMove)
-  }
 
   React.useEffect(()=>{
-    if(!localStorage.getItem("step")){
-      localStorage.setItem("step","1")
-    }
-
-    let data = localStorage.getItem("gameData")
-    let gameData:IGemeDataInterface[] = JSON.parse(data!)
-    if(gameData){
-      continGame(gameData[gameData.length - 1])
-    } else{
       startNewGame()
-    }
     },[]) 
   
   
@@ -191,10 +202,10 @@ const Fild: React.FC<any> = () => {
   },[arr])
 
   React.useEffect(()=>{
-    
     setStep(parseInt(localStorage.getItem("step")!))
   },[])
 
+ 
 
   React.useEffect(()=>{
    sharedService.stepNow = step
@@ -203,45 +214,65 @@ const Fild: React.FC<any> = () => {
   let text =  winner || "Ход игрока" + turnToMove
   
   const inputref = React.useRef<HTMLInputElement>(null)
+  const inputrefX = React.useRef<HTMLInputElement>(null)
+  const inputrefY = React.useRef<HTMLInputElement>(null)
 
   const showStep = ()=>{
     let step:number = parseInt(inputref.current?.value!) - 1
-    if(arrOfSteps[step]){
-      continGame(arrOfSteps[step])
-      
-      setStep(step +1)
-    }
+    
   }
 
   const showLastStep = ()=>{
-    if(arrOfSteps){    
-      continGame(arrOfSteps[arrOfSteps.length - 1])
-      setStep(arrOfSteps.length)
-    }
+
   }
 
   const showPrevStep = ()=>{
     let step1:number = step - 2
-    if(arrOfSteps[step1]){
-      continGame(arrOfSteps[step1])
-      
-      setStep(step1 + 1)
-    }
+
   }
   const showNextStep = ()=>{
     let step1:number = step 
-    if(arrOfSteps[step1]){
-      continGame(arrOfSteps[step1])
-      
-      setStep(step1 + 1)
-    }
+
   }
+
+  const showStepsWithCoord = ()=>{
+    let arrOfSatisfy:Step[] = [] 
+    let x:number = parseInt(inputrefX.current!.value)
+    let y:number = parseInt(inputrefY.current!.value)
+
+    const goToPAr:(step:Step)=>Step|null = (step)=>{
+      let isFinded = false
+      let currentStep:Step|null = step
+      do{
+          isFinded = (currentStep!.x != x && currentStep!.y != y)
+          currentStep = currentStep!.zparentStep
+        
+      }while(currentStep != null && isFinded  )
+      return currentStep
+    }
+
+    console.log(arrOfAllSteps);
+    
+    if(x && y){
+      arrOfAllSteps.forEach((e)=>{
+        let stepsWithCoord = goToPAr(e)
+        if(stepsWithCoord && stepsWithCoord.moveBy === "bot"){
+          arrOfSatisfy.push(stepsWithCoord)
+        }
+      })
+    }
+
+    console.log(arrOfAllSteps);
+  }
+
+  
+  
 
   return <div className={styles.fild}>
      {arr.length&&arr} 
      <div className="turnToMove"> 
      {text}<br/><br/>
-     <div className="player" >Игрок 1: <img  width="100px" height="100px" src="https://pngimg.com/uploads/checkers/checkers_PNG17.png" ></img></div>
+     <div className="player" > Бот: <img  width="100px" height="100px" src="https://pngimg.com/uploads/checkers/checkers_PNG17.png" ></img></div>
      <br/>
      <div className="player" >Игрок 2: <img  width="100px" height="100px" src={url} ></img></div> 
      <div className="player" >Ход: {step}</div>
@@ -253,6 +284,10 @@ const Fild: React.FC<any> = () => {
       <button></button>
      </div>
      <button  onClick={showLastStep}>К последнему ходу</button>
+     <button  onClick={showStepsWithCoord}>showStepsWithCoord</button>
+     <input type="number" className="input" min={1} max={8} ref={inputrefX}></input> 
+     <input type="number" className="input" min={1} max={8} ref={inputrefY}></input> 
+
 
      </div>
   </div>;

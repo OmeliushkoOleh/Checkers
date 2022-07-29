@@ -12,6 +12,8 @@ export interface Iobj  {
     turnToMove:Player,
     checkerWhoHit:CheckerProps|null,
     stepNow:number,
+    player:CheckerProps|null,
+    enemy:CheckerProps|null,
 }
 // class sharedService{
 //     cellsArray1 = []
@@ -29,7 +31,9 @@ export const sharedService:Iobj = {
     cellsArr:[],
     setArr:(arr)=>{},
     setTurnToMove:()=>{},
-    turnToMove:1,
+    turnToMove:2,
     checkerWhoHit:null,
     stepNow:0,
+    player:null,
+    enemy:null,
 }

@@ -1,9 +1,13 @@
 import * as React from "react";
 import styles from './Cell.module.css';
-import Checker, { CheckerProps, Player } from '../Checker/Checker'
+import Checker, { CheckerProps, dragstart, Player } from '../Checker/Checker'
 import { sharedService } from "../SharedService";
 import $ from 'jquery';
+import { recursion, Step } from "../BotService";
+import { createBranch } from "../Fild/Fild";
 
+let dataTrans:any
+export let arrOfAllSteps:Step[]
 
 
 export type cellColor = "white"|"black";
@@ -26,8 +30,141 @@ export interface IGemeDataInterface {
   turnToMove:Player,
   checkerWhoHit:Omit<CheckerProps,"arr"|"setArr">|null,
 }
-let sad = $
 export  const size = 100
+
+function emulateDragStart(x:number,y:number){
+  let dataTransfer = new DataTransfer()
+  let event = new Event("dragstart");
+  dataTrans = dataTransfer;
+  (event as any).dataTransfer = dataTransfer
+  dragstart(event,sharedService.enemy!)
+}
+function emulateDrop (){
+  let coord = createBranch()
+  console.log(createBranch());
+  
+  console.log(sharedService);
+  console.log(coord!.x);
+  
+  debugger
+  let neededCell = sharedService.cellsArr.find(e=>e.props.x == coord!.x && e.props.y == coord!.y )
+
+  let event = new Event("drop");
+  (event as any).dataTransfer  = dataTrans
+
+  handleDrop(event,neededCell!.props)
+
+}
+function handleDrop(e:any,props:CellProps) { 
+  const data:CheckerProps = JSON.parse(e.dataTransfer.getData("text"));
+  e.stopPropagation(); // препятствует перенаправлению в браузере.
+  let newArr:any =  [];  
+  sharedService.checkerWhoHit = null
+
+  let cb = (acc:number,curr:any)=>{
+    if(curr.props.checker){
+      return acc + 1
+    }else{
+      return acc
+    }
+  }
+  let prevCoutnOfCheckersBefore = sharedService.cellsArr.reduce(cb,0)
+
+
+  const removeFrom = ():CellProps[]=>{
+    let arrToDel:CellProps[] = []
+    let delX = props.x - data.x > 0 ? 1 : - 1
+    let delY = props.y - data.y > 0 ? 1 : - 1
+    let currentX = data.x - delX
+    let currentY = data.y - delY
+    while(props.x !== currentX + delX  && props.y !== currentY + delX ){
+      
+      currentX = currentX + delX
+      currentY = currentY + delY
+      let itemToDel = sharedService.cellsArr.find(e=>{
+        return e.props.x === currentX && e.props.y === currentY
+      })
+      if(itemToDel){
+        arrToDel.push(itemToDel.props)
+      }
+    }
+    return arrToDel
+  }
+  let itemsToRemove = removeFrom()
+
+  newArr = sharedService.cellsArr.map((e:ICellComponent)=>{
+    if(itemsToRemove.includes(e.props)){ //удаление шашки которая походила, о все шашки которые побили
+      let newProps = {...e.props,checker:null,key:Math.random()*1000}
+      e=<Cell {...newProps} ></Cell>
+    }
+    if(e.props === props){ //создаёт шашку на месте куда походил или побил 
+      let isKing:boolean = data.isKing
+      if(data.player === 1 && props.y === 8){
+        isKing = true
+      }  else if (data.player === 2 && props.y === 1){
+        isKing = true
+      }
+      let newProps = {
+        ...e.props,
+        checker:<Checker {...{...data,x:props.x,y:props.y,setArr:props.setArr,isKing:isKing}}></Checker>,
+        key:Math.random()*1000,
+        canDrop:false,
+      }
+      
+              
+      e=<Cell {...newProps} ></Cell>       
+    }
+    if(e.props.canDrop === true){ //создаёт шашку на месте куда походил или побил
+      let newProps = {
+        ...e.props,
+        key:Math.random()*1000,
+        canDrop:false,
+      }
+      e=<Cell {...newProps} ></Cell>
+    }
+    return e
+  })
+  let prevCoutnOfCheckersAfter = newArr.reduce(cb,0)
+  
+    
+  if(prevCoutnOfCheckersBefore !== prevCoutnOfCheckersAfter){     
+    let newProps = {...data,x:props.x,y:props.y}
+    sharedService.checkerWhoHit = newProps
+  }
+      
+  props.setArr(newArr)
+  sharedService.cellsArr = newArr
+  let checkerProps:CheckerProps = sharedService.checkerWhoHit!
+  if(sharedService.checkerWhoHit == null || (sharedService.checkerWhoHit != null && !whoCanHit(checkerProps.x,checkerProps.y))){
+    let inverted:Player
+    if(sharedService.turnToMove === 1){
+      inverted = 2
+      sharedService.turnToMove = inverted
+      sharedService.setTurnToMove(inverted)
+    } else{
+      inverted = 1
+      sharedService.turnToMove = inverted
+      sharedService.setTurnToMove(inverted)
+    }
+  }
+  
+  
+  
+  props.setStep((prev)=>prev + 1)
+  if(sharedService.turnToMove === 1){
+    sharedService.player!.x = props.x 
+    sharedService.player!.y = props.y 
+
+    
+    let fromWherMove = getBestStep()
+    
+    emulateDragStart(fromWherMove.x,fromWherMove.y)
+    setTimeout(()=>{emulateDrop()},300)
+  } else{
+    sharedService.enemy!.x = props.x 
+    sharedService.enemy!.y = props.y
+  }
+}
 
 export interface ICellComponent  {
   props:CellProps
@@ -157,108 +294,82 @@ export const  whoCanHit = (x:number,y:number)=>{
   }
 }
 
+const getBestStep:()=>{x:number,y:number} = function(){
+
+    
+  let steps = recursion(sharedService.enemy!.x,sharedService.enemy!.y,0,1,sharedService.player!.x,sharedService.player!.y,null,0)
+  // console.log("bot" + sharedService.enemy!.x,sharedService.enemy!.y);
+  
+  // console.log(sharedService.player!.x,sharedService.player!.y);
+
+  // steps = steps.filter((e)=>{
+  //   return  e.zparentStep !== null 
+  // })
+console.log(steps.length);
+
+  steps.sort((a,b)=>{
+    let byExp = ( b.expectation as number) - (a.expectation as number)
+    let byStepNmbr =  ( b.stepNumber as number)  - (a.stepNumber as number)
+      return     byExp  ||  byStepNmbr
+  })
+
+  //console.log(steps);
+  
+  arrOfAllSteps = steps
+  
+  
+  
+  return {x:steps[0].x,y:steps[0].y}
+}
+
 const Cell: React.FC<CellProps> = (props:CellProps  ) => {
   
-  function handleDrop(e:any) { 
-    const data:CheckerProps = JSON.parse(e.dataTransfer.getData("text"));
 
-    e.stopPropagation(); // препятствует перенаправлению в браузере.
+ 
+
+  function moveToCoord(fromX:number,fromY:number,toX:number,toY:number){
+    console.log(fromX,fromY,toX,toY);
     
-    let newArr:any =  [];  
-    sharedService.checkerWhoHit = null
-
-    let cb = (acc:number,curr:any)=>{
-      if(curr.props.checker){
-        return acc + 1
-      }else{
-        return acc
-      }
-    }
-    let prevCoutnOfCheckersBefore = sharedService.cellsArr.reduce(cb,0)
-
-
-    const removeFrom = ():CellProps[]=>{
-      let arrToDel:CellProps[] = []
-
-      let delX = props.x - data.x > 0 ? 1 : - 1
-      let delY = props.y - data.y > 0 ? 1 : - 1
-      let currentX = data.x - delX
-      let currentY = data.y - delY
-      while(props.x !== currentX + delX  && props.y !== currentY + delX ){
-        
-        currentX = currentX + delX
-        currentY = currentY + delY
-        let itemToDel = sharedService.cellsArr.find(e=>{
-          return e.props.x === currentX && e.props.y === currentY
-        })
-        if(itemToDel){
-          arrToDel.push(itemToDel.props)
-        }
-      }
-      return arrToDel
-    }
-    let itemsToRemove = removeFrom()
-
-    newArr = sharedService.cellsArr.map((e:ICellComponent)=>{
-      if(itemsToRemove.includes(e.props)){ //удаление шашки которая походила, о все шашки которые побили
-        let newProps = {...e.props,checker:null,key:Math.random()*1000}
-        e=<Cell {...newProps} ></Cell>
-      }
-      if(e.props === props){ //создаёт шашку на месте куда походил или побил 
-        let isKing:boolean = data.isKing
-        if(data.player === 1 && props.y === 8){
-          isKing = true
-        }  else if (data.player === 2 && props.y === 1){
-          isKing = true
-        }
-        let newProps = {
-          ...e.props,
-          checker:<Checker {...{...data,x:props.x,y:props.y,setArr:props.setArr,isKing:isKing}}></Checker>,
-          key:Math.random()*1000,
-          canDrop:false,
-        }
-        
-                
-        e=<Cell {...newProps} ></Cell>       
-      }
-      if(e.props.canDrop === true){ //создаёт шашку на месте куда походил или побил
-        let newProps = {
-          ...e.props,
-          key:Math.random()*1000,
-          canDrop:false,
-        }
-        e=<Cell {...newProps} ></Cell>
-      }
-      return e
-    })
-    let prevCoutnOfCheckersAfter = newArr.reduce(cb,0)
+    let newArr:any =  [...sharedService.cellsArr];  
     
+    let checker:any 
+    newArr.forEach((e:any,index:any)=>{
+      let deletedChecker = !(e.props.x == fromX && e.props.y == fromY)
       
-    if(prevCoutnOfCheckersBefore !== prevCoutnOfCheckersAfter){     
-      let newProps = {...data,x:props.x,y:props.y}
-      sharedService.checkerWhoHit = newProps
-    }
-        
+      
+      if(!deletedChecker){
+        checker = {
+          ...e.props,
+          checker:<Checker {...{...e.props,x:toX,y:toY,setArr:props.setArr,isKing:true}}></Checker>,
+          key:Math.random()*1000,
+        }
+        let copiedProps = {...e.props,checker:null}
+        console.log(copiedProps);
+
+        copiedProps.key = Math.random()*1000 
+        newArr[index] = <Cell {...copiedProps} ></Cell>
+      }
+    })
+    console.log(checker);
+    
+    newArr.forEach((e:any,index:any)=>{
+      if(e.props.x == toX && e.props.y == toY){
+        newArr[index] = <Cell {...checker} ></Cell>
+      }
+    })
+
+
     props.setArr(newArr)
     sharedService.cellsArr = newArr
-    let checkerProps:CheckerProps = sharedService.checkerWhoHit!
-    if(sharedService.checkerWhoHit == null || (sharedService.checkerWhoHit != null && !whoCanHit(checkerProps.x,checkerProps.y))){
-      let inverted:Player
-      if(sharedService.turnToMove === 1){
-        inverted = 2
-        sharedService.turnToMove = inverted
-        sharedService.setTurnToMove(inverted)
-      } else{
-        inverted = 1
-        sharedService.turnToMove = inverted
-        sharedService.setTurnToMove(inverted)
-      }
-    }
-    
-    saveData()
-    
-    props.setStep((prev)=>prev + 1)
   }
+
+  function isCurrStepGood(steps:Step[]):boolean  {
+
+    
+    return true
+  }
+
+
 
   function handleDragOver(e:any){
     if(e.target.classList.contains("canDrop")){
@@ -267,51 +378,6 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
     }
   }
 
-  const saveData= ()=>{
-
-    let cells:IGemeDataInterface["cells"] = sharedService.cellsArr.map((e)=>{
-      return {
-        x:e.props.x,
-        y:e.props.y,
-        color:e.props.color,
-        canDrop:e.props.canDrop,
-        setStep:e.props.setStep,
-      }
-    })
-
-    let checkers:IGemeDataInterface["checkers"] = []
-    sharedService.cellsArr.forEach((e)=>{
-      if(e.props.checker){
-        checkers.push({
-          x: e.props.checker.props.x,
-          y: e.props.checker.props.y,
-          isKing: e.props.checker.props.isKing,
-          player: e.props.checker.props.player,
-        })
-      }
-    })
-    
-    let dataGame:IGemeDataInterface = {
-      coordinates: {
-        x: sharedService.coordinates.x,
-        y: sharedService.coordinates.y
-      },
-      checkers: checkers,
-      cells: cells,
-      turnToMove: sharedService.turnToMove,
-      checkerWhoHit: sharedService.checkerWhoHit
-    }
-
-    arrOfSteps.push(dataGame)
-    let stringifiedProps = JSON.stringify(arrOfSteps)
-
-
-
-    localStorage.setItem("gameData",stringifiedProps)
-    let newStep = parseInt(localStorage.getItem("step")!) + 1
-    localStorage.setItem("step",newStep.toString())
-
-  }
 
   function handleDragLeave(e:any){
     if(e.target.classList.contains("canDrop")){
@@ -321,11 +387,14 @@ const Cell: React.FC<CellProps> = (props:CellProps  ) => {
   }
 
 
+
   const left = props.x * size - size
   const top = props.y * size - size
-  return <div onDrop={handleDrop} onDragOver={handleDragOver}  onDragLeave={handleDragLeave} className={styles.cell + " " + (props.canDrop? "canDrop": "notCanDrop")}   
+  return <div id={props.x.toString() + props.y.toString()} onDrop={(e)=>{handleDrop(e,props)}} onDragOver={handleDragOver}  onDragLeave={handleDragLeave} className={styles.cell + " " + (props.canDrop? "canDrop": "notCanDrop")}   
   style={{backgroundColor:props.color,left:left,top:top,width:size,height:size}}>
       {props.checker}
+      {props.x}
+      {props.y}
   </div>;
 };
 

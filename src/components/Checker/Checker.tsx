@@ -16,21 +16,26 @@ export type CheckerProps = {
 
 export type Player = 1 | 2;
 
-const Checker: React.FC<CheckerProps> = (props:CheckerProps) => {  
-let class1 
 
-if(props.player === 1){
-   class1 = props.isKing?"checker1 king":"checker1"
-} else(
-  class1 = props.isKing?"checker2 king":"checker2"
+function handleDragEnd(props:CheckerProps) {
+  let newArr:any =  [...sharedService.cellsArr];
+  newArr.forEach((e:any,index:any)=>{
+    let copiedProps = {...e.props}
+    copiedProps.canDrop = false
+    copiedProps.key = Math.random()*1000 
+    newArr[index] = <Cell {...copiedProps} ></Cell>
+  })
+  props.setArr(newArr)
+  sharedService.cellsArr = newArr
+}
 
-)
-const dragstart = (e:any)=>{
+export const dragstart = (e:any,props:CheckerProps)=>{
 
 
-  if(parseInt(localStorage.getItem("step")!) !== sharedService.stepNow){  
-    return false
-  }
+
+  // if(parseInt(localStorage.getItem("step")!) !== sharedService.stepNow){  
+  //   return false
+  // }
   
   let newArr =  [...sharedService.cellsArr]
   
@@ -79,22 +84,23 @@ const dragstart = (e:any)=>{
   props.setArr(newArr  as JSX.Element[])
 }
 
+const Checker: React.FC<CheckerProps> = (props:CheckerProps) => {  
+let class1 
+
+if(props.player === 1){
+   class1 = props.isKing?"checker1 king":"checker1"
+} else(
+  class1 = props.isKing?"checker2 king":"checker2"
+
+)
 
 
 
 
 
-function handleDragEnd() {
-  let newArr:any =  [...sharedService.cellsArr];
-  newArr.forEach((e:any,index:any)=>{
-    let copiedProps = {...e.props}
-    copiedProps.canDrop = false
-    copiedProps.key = Math.random()*1000 
-    newArr[index] = <Cell {...copiedProps} ></Cell>
-  })
-  props.setArr(newArr)
-  sharedService.cellsArr = newArr
-}
+
+
+
 
 function del(e:any){
   e.preventDefault();
@@ -113,7 +119,10 @@ function del(e:any){
 
 }
 
-  return <div draggable="true" onDragStart={dragstart} onContextMenu={del} onDragEnd={handleDragEnd} className={class1} style={{width:size,height:size,backgroundColor:"transrapent"}}></div>;
+  return <div draggable="true" onDragStart={(e)=>{dragstart(e,props)}} onContextMenu={del} onDragEnd={()=>{handleDragEnd(props)}} className={class1} style={{width:size,height:size,backgroundColor:"transrapent"}}>
+    {props.x}
+    {props.y}
+  </div>;
 };
 
 export default Checker;
